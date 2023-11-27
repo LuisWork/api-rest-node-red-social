@@ -21,6 +21,13 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 // Cargar la configuracion de rutas
+const userRoutes = require('./routes/user');
+const publicationRoutes = require('./routes/publication');
+const followRoutes = require('./routes/follow');
+
+app.use("/api", userRoutes);
+app.use("/api", publicationRoutes);
+app.use("/api", followRoutes);
 
 // Ruta de prueba
 app.get("/prueba", (req, res) => {
