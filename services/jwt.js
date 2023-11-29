@@ -18,7 +18,7 @@ exports.createToken = (user) => {
     iat: moment().unix(),
     exp: moment().add(30, "days").unix(),
   };
-};
 
-// Devolver JWT Token codificado
-//return jwt.encode(payload, secret);
+  // Devolver JWT Token codificado
+  return jwt.encode(payload, secret);
+};
