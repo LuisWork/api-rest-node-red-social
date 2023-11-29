@@ -1,6 +1,7 @@
 // Importar dependencias y modulos
-const User = require("../models/User");
+const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const jwt = require("../services/jwt");
 
 // Acciones de prueba
 const pruebaUser = (req, res) => {
@@ -62,7 +63,56 @@ const guardarUsuario = (req, res) => {
   });
 };
 
+const login = (req, res) => {
+  // Recoger los parametros del body
+  let params = req.body;
+
+  if (!params.email || !params.password) {
+    return res.status(400).send({
+      status: "error",
+      message: "Faltan datos por enviar",
+    });
+  }
+
+  // Buscar en la base de datos si existen las credenciales
+  User.findOne({ email: params.email }) /*.select({"password": 0})*/
+    .exec((error, user) => {
+      if (error || !user) {
+        return res.status(404).send({
+          status: "error",
+          message: "No existe el usuario",
+        });
+      }
+
+      // Comprobar su password
+      const pwd = bcrypt.compareSync(params.password, user.password);
+
+      if (!pwd) {
+        return res.status(400).send({
+          status: "error",
+          message: "No te has identificado correctamente",
+        });
+      }
+
+      // Conseguir Token
+      const token = jwt.createToken;
+
+      // Devolver los datos del usuario
+      return res.status(200).send({
+        status: "success",
+        message: "Te has identificado correctamente",
+        user: {
+          id: user.id,
+          name: user.name,
+          nick: user.nick,
+        },
+        token,
+      });
+    });
+};
+
 module.exports = {
   pruebaUser,
   guardarUsuario,
+  login,
 };
