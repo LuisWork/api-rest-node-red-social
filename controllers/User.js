@@ -2,6 +2,7 @@
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("../services/jwt");
+const mongoosePagination = require("mongoose-pagination");
 
 // Acciones de prueba
 const pruebaUser = (req, res) => {
@@ -117,19 +118,122 @@ const profile = (req, res) => {
   const id = req.params.id;
   // Consulta para sacar los datos del usuario
   //const userProfile = await User.findById(id)
-  User.findById(id).select({password: 0, role: 0}).exec((error, userProfile) => {
-    if (error || !userProfile) {
-      return res.status(404).send({
+  User.findById(id)
+    .select({ password: 0, role: 0 })
+    .exec((error, userProfile) => {
+      if (error || !userProfile) {
+        return res.status(404).send({
+          status: "error",
+          message: "El usuario no existe o hay un error",
+        });
+      }
+      // Devolver el resultado
+      // Posteriormente devolver informacion de follows
+      return res.status(200).send({
+        status: "success",
+        user: userProfile,
+      });
+    });
+};
+
+const list = (req, res) => {
+  // Controlar en que pagina estamos
+
+  let page = 1;
+
+  if (req.params.page) {
+    page = req.params.page;
+  }
+
+  page = parseInt(page);
+
+  // Hacer la consulta con Mongoose pagination
+
+  let itemsPerPage = 5;
+
+  User.find()
+    .sort("_id")
+    .paginate(page, itemsPerPage, (error, users, total) => {
+      if (error || !users) {
+        return res.status(404).send({
+          status: "error",
+          message: "No hay usuarios disponibles para mostrar",
+          error,
+        });
+      }
+      // Devolver el resultado (Posteriormente info de follows)
+      return res.status(200).send({
+        users,
+        page,
+        itemsPerPage,
+        total,
+        pages: Math.ceil(total / itemsPerPage),
+      });
+    });
+};
+
+const update = (req, res) => {
+  // Recoger info del usuario a actualizar
+  let userIdentity = req.user;
+  const userToUpdate = req.body;
+  // Eliminar campos sobrantes
+  delete userToUpdate.iat;
+  delete userToUpdate.exp;
+  delete userToUpdate.role;
+  delete userToUpdate.image;
+  // Comprobar si el usuario ya existe
+  User.find({
+    $or: [
+      { email: userToUpdate.email.toLowerCase() },
+      { nick: userToUpdate.nick.toLowerCase() },
+    ],
+  }).exec(async (error, users) => {
+    if (error)
+      return res.status(500).json({
         status: "error",
-        message: "El usuario no existe o hay un error",
+        message: "Error en la consulta de usuarios",
+      });
+
+    let userIsset = false;
+    users.forEach((user) => {
+      if (user && user._id != userIdentity.id) {
+        userIsset = true;
+      }
+    });
+
+    if (userIsset) {
+      return res.status(200).send({
+        status: "success",
+        message: "El usuario ya existe",
       });
     }
-    // Devolver el resultado
-    // Posteriormente devolver informacion de follows
-    return res.status(200).send({
-      status: "success",
-      user: userProfile,
-    });
+
+    // Cifrar la password
+    if (userToUpdate.password) {
+      let pwd = await bcrypt.hash(userToUpdate.password, 10);
+      userToUpdate.password = pwd;
+    }
+
+    // Buscar y actualizar
+    User.findByIdAndUpdate(
+      userIdentity.id,
+      userToUpdate,
+      { new: true },
+      (error, userUpdated) => {
+        if (error || !userUpdated) {
+          return res.status(500).json({
+            status: "error",
+            message: "Error al actualizar usuario",
+          });
+        }
+        // Devolver la respuesta
+        return res.status(200).send({
+          status: "success",
+          message: "Metodo update",
+          user: userUpdated,
+        });
+      }
+    );
   });
 };
 
@@ -138,4 +242,6 @@ module.exports = {
   guardarUsuario,
   login,
   profile,
+  list,
+  update,
 };
