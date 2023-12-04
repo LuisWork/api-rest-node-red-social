@@ -7,7 +7,7 @@ const jwt = require("../services/jwt");
 const pruebaUser = (req, res) => {
   return res.status(200).send({
     message: "Mensaje enviado desde el controlador: controllers/user.js",
-    user: req.user
+    user: req.user,
   });
 };
 
@@ -112,8 +112,30 @@ const login = (req, res) => {
     });
 };
 
+const profile = (req, res) => {
+  // Recibir el parametro del id de usuario por la URL
+  const id = req.params.id;
+  // Consulta para sacar los datos del usuario
+  //const userProfile = await User.findById(id)
+  User.findById(id).select({password: 0, role: 0}).exec((error, userProfile) => {
+    if (error || !userProfile) {
+      return res.status(404).send({
+        status: "error",
+        message: "El usuario no existe o hay un error",
+      });
+    }
+    // Devolver el resultado
+    // Posteriormente devolver informacion de follows
+    return res.status(200).send({
+      status: "success",
+      user: userProfile,
+    });
+  });
+};
+
 module.exports = {
   pruebaUser,
   guardarUsuario,
   login,
+  profile,
 };
