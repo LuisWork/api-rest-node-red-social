@@ -215,25 +215,32 @@ const update = (req, res) => {
     }
 
     // Buscar y actualizar
-    User.findByIdAndUpdate(
-      userIdentity.id,
-      userToUpdate,
-      { new: true },
-      (error, userUpdated) => {
-        if (error || !userUpdated) {
-          return res.status(500).json({
-            status: "error",
-            message: "Error al actualizar usuario",
-          });
-        }
-        // Devolver la respuesta
-        return res.status(200).send({
-          status: "success",
-          message: "Metodo update",
-          user: userUpdated,
+    try {
+      let userUpdated = await User.findByIdAndUpdate(
+        userIdentity.id,
+        userToUpdate,
+        { new: true }
+      );
+
+      if (!userUpdated) {
+        return res.status(400).json({
+          status: "error",
+          message: "Error al actualizar el usuario",
         });
       }
-    );
+
+      return res.status(200).send({
+        status: "success",
+        message: "Metodo de actualizar usuario",
+        user: userUpdated,
+      });
+      
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error al actualizar el usuario",
+      });
+    }
   });
 };
 
