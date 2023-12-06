@@ -1,7 +1,4 @@
-.jpg
-.jpeg
-.gif
-.png
-
-/uploads
-/avatars
+*.jpg
+*.jpeg
+*.gif
+*.png
