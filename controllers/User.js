@@ -219,7 +219,7 @@ const update = (req, res) => {
     // Buscar y actualizar
     try {
       let userUpdated = await User.findByIdAndUpdate(
-        userIdentity.id,
+        { _id: userIdentity.id },
         userToUpdate,
         { new: true }
       );
@@ -278,7 +278,9 @@ const upload = async (req, res) => {
   try {
     // Si si es correcta, guardar imagen en bbdd
     let updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
+      {
+        _id: req.user.id,
+      },
       { image: req.file.filename },
       { new: true }
     );
