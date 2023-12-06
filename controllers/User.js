@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("../services/jwt");
 const mongoosePagination = require("mongoose-pagination");
 const fs = require("fs");
+const path = require("path");
 
 // Acciones de prueba
 const pruebaUser = (req, res) => {
@@ -294,6 +295,24 @@ const upload = async (req, res) => {
   }
 };
 
+const avatar = (req, res) => {
+  // Sacar el parametro de la url
+  const file = req.params.file;
+  // Montar el path real de la imagen
+  const filePath = "./uploads/avatars/" + file;
+  // Comprobar que existe
+  fs.stat(filePath, (error, exists) => {
+    if (!exists) {
+      res.status(404).send({
+        status: "error",
+        message: "No existe la imagen",
+      });
+    }
+    // Devolver un file
+    return res.sendFile(path.resolve(filePath));
+  });
+};
+
 module.exports = {
   pruebaUser,
   guardarUsuario,
@@ -302,4 +321,5 @@ module.exports = {
   list,
   update,
   upload,
+  avatar,
 };
