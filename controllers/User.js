@@ -3,6 +3,7 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("../services/jwt");
 const mongoosePagination = require("mongoose-pagination");
+const fs = require("fs");
 
 // Acciones de prueba
 const pruebaUser = (req, res) => {
@@ -234,7 +235,6 @@ const update = (req, res) => {
         message: "Metodo de actualizar usuario",
         user: userUpdated,
       });
-      
     } catch (error) {
       return res.status(500).json({
         status: "error",
@@ -244,6 +244,56 @@ const update = (req, res) => {
   });
 };
 
+const upload = async (req, res) => {
+  // Recoger el fichero de imagen y comprobar que existe
+  if (!req.file) {
+    return res.status(404).send({
+      status: "error",
+      message: "La peticion no incluye la imagen",
+    });
+  }
+  // Conseguir el nombre del archivo
+  let image = req.file.originalname;
+  // Sacar la extension del archivo
+  const imageSplit = image.split(".");
+  const extension = imageSplit[1];
+
+  // Comprobar extension
+  if (
+    extension != "png" &&
+    extension != "jpg" &&
+    extension != "jpeg" &&
+    extension != "gif"
+  ) {
+    // Si no es correcta, borrar archivo
+    const filePath = req.file.path;
+    const fileDeleted = fs.unlinkSync(filePath);
+    //Devolver respuesta negativa
+    return res.status(400).send({
+      status: "error",
+      message: "Extension del fichero invalida",
+    });
+  }
+  try {
+    // Si si es correcta, guardar imagen en bbdd
+    let updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { image: req.file.filename },
+      { new: true }
+    );
+    return res.status(200).send({
+      status: "success",
+      message: "Image uploaded",
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(400).send({
+      status: "error",
+      message: "Error while updating image",
+    });
+  }
+};
+
 module.exports = {
   pruebaUser,
   guardarUsuario,
@@ -251,4 +301,5 @@ module.exports = {
   profile,
   list,
   update,
+  upload,
 };
