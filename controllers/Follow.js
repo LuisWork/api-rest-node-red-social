@@ -1,6 +1,7 @@
 const Follow = require("../models/follow");
 const User = require("../models/user");
 const pagination = require("mongoose-pagination");
+const followService = require("../services/followService");
 
 const pruebaFollow = (req, res) => {
   return res.status(200).send({
@@ -58,13 +59,15 @@ const following = (req, res) => {
   const itemsPerPage = 5;
   Follow.find({ user: userId })
     .populate("user followed", "-password -role -__v")
-    .paginate(page, itemsPerPage, (error, follows, total) => {
+    .paginate(page, itemsPerPage, async (error, follows, total) => {
+      let followUserIds = await followService.followUserIds(req.user.id);
       return res.status(200).send({
         status: "success",
         message: "Listado de usuarios que estoy siguiendo",
         follows,
         total,
-        usuarioLogeado: req.user.name,
+        page: Math.ceil(total / itemsPerPage),
+        user_following: followUserIds.following
       });
     });
 };
