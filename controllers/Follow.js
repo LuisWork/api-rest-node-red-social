@@ -1,28 +1,20 @@
-const follow = require("../models/follow");
-const user = require("../models/user");
+const Follow = require("../models/follow");
+const User = require("../models/user");
+const pagination = require("mongoose-pagination");
 
-// Acciones de prueba
 const pruebaFollow = (req, res) => {
   return res.status(200).send({
     message: "Mensaje enviado desde el controlador: controllers/follow.js",
   });
 };
 
-// Accion de seguir
-
 const save = (req, res) => {
-  // Conseguir datos por el body
   const params = req.body;
-
-  // Sacar el ID del usuario identificado
   const identity = req.user;
-  // Crear el objeto con modelo follow
-  let userToFollow = new follow({
+  let userToFollow = new Follow({
     user: identity.id,
     followed: params.followed,
   });
-
-  // Guardar el objeto en la Database
   userToFollow.save((error, followStored) => {
     if (error || !followStored) {
       return res.status(500).send({
@@ -30,50 +22,64 @@ const save = (req, res) => {
         message: "No se a podido seguir al usuario",
       });
     }
-
     return res.status(200).send({
-      message: "Metodo se seguir",
-      userLogged: req.user,
+      status: "success",
+      identity: req.user,
       follow: followStored,
     });
   });
 };
 
-// Accion de dejar de seguir
-
 const unfollow = (req, res) => {
-  //Recoger el id del usuario identificado
   const userId = req.user.id;
-  // Recoger el id del usuario que quiero dejar de seguir
   const followedId = req.params.id;
-
-  // Find de las coincidencias y hacer remove
-  follow
-    .find({
-      user: userId,
-      followed: followedId,
-    })
-    .remove((error, followDeleted) => {
-      if (error || !followDeleted) {
-        return res.status(400).sent({
-          status: "error",
-          message: "Error al dejar de seguir",
-        });
-      }
-
+  Follow.find({
+    user: userId,
+    followed: followedId,
+  }).remove((error, followDeleted) => {
+    if (error || !followDeleted) {
       return res.status(500).send({
-        status: 'success',
-        message: 'Has dejado de seguir correctamente',
+        status: "error",
+        message: "Error al dejar de seguir",
+      });
+    }
+    return res.status(500).send({
+      status: "success",
+      message: "Has dejado de seguir correctamente",
+    });
+  });
+};
+
+const following = (req, res) => {
+  let userId = req.user.id;
+  if (req.params.id) userId = req.params.id;
+  let page = 1;
+  if (req.params.page) page = req.params.page;
+  const itemsPerPage = 5;
+  Follow.find({ user: userId })
+    .populate("user followed", "-password -role -__v")
+    .paginate(page, itemsPerPage, (error, follows, total) => {
+      return res.status(200).send({
+        status: "success",
+        message: "Listado de usuarios que estoy siguiendo",
+        follows,
+        total,
+        usuarioLogeado: req.user.name,
       });
     });
 };
 
-// Listado de usuarios que cualquier usuario esta siguiendo
-
-// Accion de listar usuarios que me siguen
+const followers = (req, res) => {
+  return res.status(200).send({
+    status: "success",
+    message: "Metodo followers",
+  });
+};
 
 module.exports = {
   pruebaFollow,
   save,
   unfollow,
+  following,
+  followers,
 };
