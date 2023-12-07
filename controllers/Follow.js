@@ -67,7 +67,8 @@ const following = (req, res) => {
         follows,
         total,
         page: Math.ceil(total / itemsPerPage),
-        user_following: followUserIds.following
+        user_following: followUserIds.following,
+        user_follow_me: followUserIds.followers
       });
     });
 };
